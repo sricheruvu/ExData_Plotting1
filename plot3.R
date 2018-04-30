@@ -2,18 +2,31 @@
 
 library(data.table)
 rm(list=ls()) #clear WS
+setwd("~/GitHub/ExploratoryDataAnalysis/ExData_Plotting1")
 
-# Initialization of the processed data table
-hpc_test=read.table("household_power_consumption.txt",nrows = 30 , header=TRUE, sep = ";")
-hpc=read.table("household_power_consumption.txt",skip = 66637,nrows = 2880 , header=TRUE, sep = ";")
-names(hpc)= names(hpc_test)
-hpc$DateTime = strptime(paste(hpc$Date,hpc$Time), format = "%d/%m/%Y %H:%M:%S")
+#Reads in data from file then subsets data for specified dates
+dt_power <- data.table::fread(input = "~/GitHub/ExploratoryDataAnalysis/household_power_consumption.txt"
+                             , na.strings="?")
 
-with(hpc,plot(DateTime,Sub_metering_1,ylab="Energy sub metering",type="l",xlab="", col="black"))
-lines(hpc$DateTime,hpc$Sub_metering_2,type="l",col="red")
-lines(hpc$DateTime,hpc$Sub_metering_3, type="l",col="blue")
-legend("topright",legend=c("Sub_metering_1","Sub_metering_2","Sub_metering_3"),lwd=2.5,lty = c(1,1,1),col = c("black","red","blue"))
+# Prevents Scientific Notation
+dt_power[, Global_active_power := lapply(.SD, as.numeric), .SDcols = c("Global_active_power")]
 
-dev.print(png, "plot3.png", width=480, height=480)
-dev.copy(png, file = "C:/Users/Niyati/Documents/GitHub/ExploratoryDataAnalysis/ExData_Plotting1/plot3.png") 
+# Making a POSIXct date capable of being filtered and graphed by time of day
+dt_power[, dateTime := as.POSIXct(paste(Date, Time), format = "%d/%m/%Y %H:%M:%S")]
+
+# Filter Dates for 2007-02-01 and 2007-02-02
+dt_power <- dt_power[(dateTime >= "2007-02-01") & (dateTime < "2007-02-03")]
+
+#save plot3
+png("plot3.png", width=480, height=480)
+
+# Plot 3
+plot(dt_power[, dateTime], dt_power[, Sub_metering_1], type="l", xlab="", ylab="Energy sub metering")
+lines(dt_power[, dateTime], dt_power[, Sub_metering_2],col="red")
+lines(dt_power[, dateTime], dt_power[, Sub_metering_3],col="blue")
+legend("topright"
+       , col=c("black","red","blue")
+       , c("Sub_metering_1  ","Sub_metering_2  ", "Sub_metering_3  ")
+       ,lty=c(1,1), lwd=c(1,1))
+
 dev.off()

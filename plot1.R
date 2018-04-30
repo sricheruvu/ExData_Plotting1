@@ -2,14 +2,26 @@
 
 library(data.table)
 rm(list=ls()) #clear WS
+setwd("~/GitHub/ExploratoryDataAnalysis/ExData_Plotting1")
 
-# Initialization of the processed data table
-hpc_test=read.table("household_power_consumption.txt",nrows = 30 , header=TRUE, sep = ";")
-hpc=read.table("household_power_consumption.txt",skip = 66637,nrows = 2880 , header=TRUE, sep = ";")
-names(hpc)= names(hpc_test)
-hpc$DateTime = strptime(paste(hpc$Date,hpc$Time), format = "%d/%m/%Y %H:%M:%S")
+#first, reads in data from file then subsets data for specified dates
+dt_power <- data.table::fread(input = "~/GitHub/ExploratoryDataAnalysis/household_power_consumption.txt"
+                             , na.strings="?")
 
-hist(hpc$Global_active_power, xlab="Global Active Power (kilowatts)",main = "Global Active Power", col="red")
-dev.print(png, "plot1.png", width=480, height=480)
-dev.copy(png, file = "C:/Users/Niyati/Documents/GitHub/ExploratoryDataAnalysis/ExData_Plotting1/plot1.png") 
+# Prevents histogram from printing in scientific notation
+dt_power[, Global_active_power := lapply(.SD, as.numeric), .SDcols = c("Global_active_power")]
+
+# Change Date Column to Date Type (we can also use strptime())
+dt_power[, Date := lapply(.SD, as.Date, "%d/%m/%Y"), .SDcols = c("Date")]
+
+# Filter Dates for 2007-02-01 and 2007-02-02
+dt_power <- dt_power[(Date >= "2007-02-01") & (Date <= "2007-02-02")]
+
+# save the into png file
+png("plot1.png", width=480, height=480)
+
+## Plot 1
+hist(dt_power[, Global_active_power], main="Global Active Power", 
+     xlab="Global Active Power (kilowatts)", ylab="Frequency", col="Red")
+
 dev.off()
